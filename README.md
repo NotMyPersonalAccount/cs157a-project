@@ -23,4 +23,5 @@
 
 ### Website
 - Install dependencies: `pnpm i`
+- Set up the `.env` file based off the `.env.example` template
 - Start server: `pnpm run dev`
