@@ -18,8 +18,22 @@ except mariadb.Error as e:
     print(f"Error connecting to MariaDB Platform: {e}")
     sys.exit(1)
 
+cursor = conn.cursor()
+
 app = FastAPI()
 
-@app.get("/actor/{actor_id}/movies")
-def read_actor_movies(actor_id: int):
-    return {"actor_id": actor_id}
+@app.get("/movies")
+def get_movies():
+    cursor.execute("SELECT id, title, plot, release_date, runtime, rating, genre, image_url FROM movies")
+
+    # This is why we like ORMs...
+    return [{
+        "id": row[0],
+        "title": row[1],
+        "plot": row[2],
+        "release_date": row[3],
+        "runtime": row[4],
+        "rating": row[5],
+        "genre": row[6],
+        "image_url": row[7]
+    } for row in cursor.fetchall()]
