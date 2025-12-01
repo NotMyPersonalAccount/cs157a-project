@@ -12,3 +12,8 @@ export interface Movie {
 export async function getMovies() {
   return await (await fetch(`${import.meta.env.VITE_API_URL}/movies`)).json();
 }
+
+export async function getMovieById(id: number | string): Promise<Movie> {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/movies/${id}`);
+  return res.json();
+}
