@@ -13,7 +13,7 @@ export default function MovieCard({ movie }: { movie: Movie }) {
       <CardContent className="px-0">
         <img
           src={movie.image_url}
-          className="aspect-video h-100 rounded-t-xl object-cover"
+          className="rounded-t-xl"
         />
       </CardContent>
       <CardHeader>

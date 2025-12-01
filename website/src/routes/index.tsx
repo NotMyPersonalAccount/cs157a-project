@@ -1,5 +1,5 @@
 import { getMovies, type Movie } from "@/api/movie";
-import MovieCard from "@/components/MovieCard";
+import MovieGrid from "@/components/MovieGrid";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -13,9 +13,8 @@ function RouteComponent() {
     queryFn: getMovies,
   });
 
-  return isLoading
-    ? "Loading..."
-    : !movies
-    ? "No movies found"
-    : movies.map((movie) => <MovieCard key={movie.id} movie={movie} />);
+  if (isLoading) return <p>Loading...</p>;
+  if (!movies || movies.length === 0) return <p>No movies found</p>;
+
+  return <MovieGrid movies={movies} />
 }
