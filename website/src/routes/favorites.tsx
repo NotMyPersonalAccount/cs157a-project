@@ -8,7 +8,7 @@ export const Route = createFileRoute("/favorites")({
 });
 
 async function fetchFavorites() {
-  const res = await fetch("http://localhost:8000/favorites", {
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/favorites`, {
     credentials: "include",
   });
 
@@ -39,7 +39,7 @@ function FavoritesPage() {
         </p>
         <button
           onClick={() => navigate({ to: "/login", search: { from: "/favorites" } })}
-          className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full font-bold text-white hover:shadow-xl transition"
+          className="px-8 py-4 cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 rounded-full font-bold text-white hover:shadow-xl transition"
         >
           Log In
         </button>

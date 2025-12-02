@@ -16,7 +16,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch("http://localhost:8000/favorites", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/favorites`, {
         method: "GET",
         credentials: "include",
       });
@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   async function login(username: string, password: string) {
-    const res = await fetch("http://localhost:8000/login", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function register(username: string, password: string) {
-    const res = await fetch("http://localhost:8000/register", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/register`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function logout() {
-    await fetch("http://localhost:8000/logout", {
+    await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
       method: "POST",
       credentials: "include",
     });
