@@ -1,6 +1,9 @@
 import { Link } from "@tanstack/react-router";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
+  const { user, logout } = useAuth();
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-lg border-b border-white/10">
       <div className="container mx-auto px-6 py-5 flex items-center justify-between">
@@ -14,36 +17,27 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-10">
-          <Link
-            to="/"
-            className="text-lg font-medium text-white/70 hover:text-white transition"
-            activeProps={{ className: "text-white font-bold" }}
-          >
+          <Link to="/" className="text-lg font-medium text-white/70 hover:text-white transition" activeProps={{ className: "text-white font-bold" }}>
             Home
           </Link>
-
-          <Link
-            to="/favorites"
-            className="text-lg font-medium text-white/70 hover:text-white transition"
-            activeProps={{ className: "text-white font-bold" }}
-          >
+          <Link to="/favorites" className="text-lg font-medium text-white/70 hover:text-white transition" activeProps={{ className: "text-white font-bold" }}>
             Favorites
           </Link>
         </div>
 
         <div className="flex items-center gap-6">
-          <Link
-            to="/login"
-            className="text-white/70 hover:text-white transition font-medium"
-          >
-            Login
-          </Link>
-          <Link
-            to="/signup"
-            className="text-white/70 hover:text-white transition font-medium"
-          >
-            Sign Up
-          </Link>
+          {user ? (
+            <button onClick={logout} className="text-white/70 hover:text-white transition font-medium">
+              Logout
+            </button>
+          ) : (
+            <>
+              <Link to="/login" className="text-white/70 hover:text-white transition font-medium">Login</Link>
+              <Link to="/signup" className="text-white/70 hover:text-white transition font-medium">
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

@@ -34,6 +34,7 @@ CREATE TABLE movie_people (
 
 CREATE TABLE users (
     id INTEGER AUTO_INCREMENT PRIMARY KEY,
+<<<<<<< HEAD
     username VARCHAR(20),
     active BOOLEAN,
 );
@@ -45,4 +46,17 @@ CREATE TABLE reviews (
     rating INTEGER,
     favorite BOOLEAN,
     PRIMARY KEY (user_id, movie_id)
+=======
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE favorites (
+    id INTEGER AUTO_INCREMENT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    movie_id INTEGER NOT NULL,
+    UNIQUE KEY unique_fav (user_id, movie_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
+>>>>>>> 34f531a (add user authentication, users and favorites table, login/signup page)
 );
