@@ -2,23 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import MovieGrid from "@/components/Home/MovieGrid";
+import { getFavorites } from "@/api/favorites";
 
 export const Route = createFileRoute("/favorites")({
   component: FavoritesPage,
 });
-
-async function fetchFavorites() {
-  const res = await fetch(`${import.meta.env.VITE_API_URL}/favorites`, {
-    credentials: "include",
-  });
-
-  if (!res.ok) {
-    if (res.status === 401) return [];
-    throw new Error("Failed to load favorites");
-  }
-
-  return res.json();
-}
 
 function FavoritesPage() {
   const { user } = useAuth();
@@ -26,7 +14,7 @@ function FavoritesPage() {
 
   const { data: movies = [], isLoading } = useQuery({
     queryKey: ["favorites"],
-    queryFn: fetchFavorites,
+    queryFn: getFavorites,
     enabled: !!user,
   });
 

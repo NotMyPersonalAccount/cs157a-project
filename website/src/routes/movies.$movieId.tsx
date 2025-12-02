@@ -5,6 +5,7 @@ import CastSection from "@/components/MovieDetails/CastSection";
 import Description from "@/components/MovieDetails/Description";
 import MovieHeader from "@/components/MovieDetails/MovieHeader";
 import MovieInfo from "@/components/MovieDetails/MovieInfo";
+import FavoriteButton from "@/components/MovieDetails/FavoriteButton";
 
 export const Route = createFileRoute("/movies/$movieId")({
   component: MovieDetailsComponent,
@@ -43,6 +44,10 @@ function MovieDetailsComponent() {
             director={movie.director}
             genre={movie.genre}
           />
+          
+          <div className="mb-6">
+            <FavoriteButton movieId={movie.id} />
+          </div>
           
           <div className="flex">
             <MovieInfo 
