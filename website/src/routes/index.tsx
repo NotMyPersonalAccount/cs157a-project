@@ -1,5 +1,5 @@
 import { getMovies, type Movie } from "@/api/movie";
-import MovieGrid from "@/components/MovieGrid";
+import MovieGrid from "@/components/Home/MovieGrid";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 

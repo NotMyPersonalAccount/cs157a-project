@@ -1,7 +1,10 @@
-import { getMovieById, type Movie } from "@/api/movie";
+import { getMovieById, type MovieWithCast } from "@/api/movie";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import CastSection from "@/components/MovieDetails/CastSection";
+import Description from "@/components/MovieDetails/Description";
+import MovieHeader from "@/components/MovieDetails/MovieHeader";
+import MovieInfo from "@/components/MovieDetails/MovieInfo";
 
 export const Route = createFileRoute("/movies/$movieId")({
   component: MovieDetailsComponent,
@@ -10,7 +13,7 @@ export const Route = createFileRoute("/movies/$movieId")({
 function MovieDetailsComponent() {
   const { movieId } = Route.useParams();
   
-  const { data: movie, isLoading } = useQuery<Movie>({
+  const { data: movie, isLoading } = useQuery<MovieWithCast>({
     queryKey: ["movie", movieId],
     queryFn: () => getMovieById(movieId),
   });
@@ -19,7 +22,7 @@ function MovieDetailsComponent() {
   if (!movie) return <div className="container mx-auto p-6">Movie not found</div>;
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <div className="container mx-auto px-6 pt-6 pb-0 max-w-6xl">
       <Link to="/" className="text-blue-500 hover:underline mb-6 inline-block">
         ← Back to movies
       </Link>
@@ -34,30 +37,23 @@ function MovieDetailsComponent() {
         </div>
         
         <div>
-          <h1 className="text-4xl font-bold mb-4">{movie.title}</h1>
+          <MovieHeader 
+            title={movie.title}
+            release_date={movie.release_date}
+            director={movie.director}
+            genre={movie.genre}
+          />
           
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p><span className="font-semibold">Rating:</span> {movie.rating}</p>
-              <p><span className="font-semibold">Genre:</span> {movie.genre}</p>
-              <p><span className="font-semibold">Runtime:</span> {movie.runtime} minutes</p>
-              <p><span className="font-semibold">Release Date:</span> {movie.release_date}</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Plot</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-base leading-relaxed">
-                {movie.plot}
-              </CardDescription>
-            </CardContent>
-          </Card>
+          <div className="flex gap-6">
+            <MovieInfo 
+              rating={movie.rating}
+              runtime={movie.runtime}
+            />
+            
+            <Description content={movie.plot} />
+          </div>
+
+          {movie.cast && <CastSection cast={movie.cast} />}
         </div>
       </div>
     </div>
