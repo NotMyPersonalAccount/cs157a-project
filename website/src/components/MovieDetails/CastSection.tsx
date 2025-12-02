@@ -17,6 +17,7 @@ export default function CastSection({ cast }: CastSectionProps) {
         {actors.map((actor) => (
           <Person
             key={actor.person_id}
+            personId={actor.person_id}
             name={actor.name}
             image_url={actor.image_url}
             character_name={actor.character_name}

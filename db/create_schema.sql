@@ -10,3 +10,27 @@ CREATE TABLE movies (
 
     PRIMARY KEY (id)
 );
+
+CREATE TABLE people (
+    id INTEGER AUTO_INCREMENT,
+    name VARCHAR(256) NOT NULL,
+    birth_date DATE,
+    biography TEXT,
+    image_url VARCHAR(512),
+    
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE movie_people (
+    id INTEGER AUTO_INCREMENT,
+    movie_id INTEGER NOT NULL,
+    person_id INTEGER NOT NULL,
+    role VARCHAR(32) NOT NULL,
+    character_name VARCHAR(256),
+    
+    PRIMARY KEY (id),
+    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
+    FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE,
+    INDEX idx_movie_id (movie_id),
+    INDEX idx_person_id (person_id)
+);

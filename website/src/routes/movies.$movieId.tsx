@@ -44,7 +44,7 @@ function MovieDetailsComponent() {
             genre={movie.genre}
           />
           
-          <div className="flex gap-6">
+          <div className="flex">
             <MovieInfo 
               rating={movie.rating}
               runtime={movie.runtime}
