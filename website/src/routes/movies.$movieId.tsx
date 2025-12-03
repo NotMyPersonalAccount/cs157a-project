@@ -17,6 +17,8 @@ function MovieDetailsComponent() {
   const { data: movie, isLoading } = useQuery<MovieWithCast>({
     queryKey: ["movie", movieId],
     queryFn: () => getMovieById(movieId),
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 
   if (isLoading) return <div className="container mx-auto p-6">Loading...</div>;
