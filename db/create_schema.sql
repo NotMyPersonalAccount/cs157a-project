@@ -20,12 +20,11 @@ CREATE TABLE people (
 );
 
 CREATE TABLE movie_people (
-    id INTEGER AUTO_INCREMENT,
     movie_id INTEGER NOT NULL,
     person_id INTEGER NOT NULL,
     role VARCHAR(32) NOT NULL,
     character_name VARCHAR(256),
-    PRIMARY KEY (id),
+    PRIMARY KEY (movie_id, person_id),
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
     FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE,
     INDEX idx_movie_id (movie_id),
