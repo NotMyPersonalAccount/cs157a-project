@@ -39,10 +39,9 @@ CREATE TABLE users (
 );
 
 CREATE TABLE favorites (
-    id INTEGER AUTO_INCREMENT PRIMARY KEY,
     user_id INTEGER NOT NULL,
     movie_id INTEGER NOT NULL,
-    UNIQUE KEY unique_fav (user_id, movie_id),
+    PRIMARY KEY (user_id, movie_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 );
