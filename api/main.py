@@ -132,9 +132,15 @@ def get_person(person_id: int, cursor = Depends(get_cursor)):
     row = cursor.fetchone()
     if not row:
         raise HTTPException(404, "Person not found")
-    return {"id": row[0], "name": row[1],
+    person = {"id": row[0], "name": row[1],
             "birth_date": row[2].isoformat() if row[2] else None,
-            "biography": row[3], "image_url": row[4]}
+            "biography": row[3], "image_url": row[4], "movies": []}
+    cursor.execute("SELECT movie_id, title, plot, release_date, runtime, rating, genre, image_url, role, character_name FROM movies INNER JOIN movie_people ON movies.id = movie_people.movie_id WHERE person_id = ?", (person_id,))
+    for r in cursor.fetchall():
+        movie = {"id": r[0], "title": r[1], "plot": r[2], "release_date": r[3],
+             "runtime": r[4], "rating": r[5], "genre": r[6], "image_url": r[7], "role": r[8], "character_name": r[9]}
+        person["movies"].append(movie)
+    return person
 
 @app.post("/movies/{movie_id}/comments")
 def add_comment(movie_id: int, content: str = Form(...), user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):

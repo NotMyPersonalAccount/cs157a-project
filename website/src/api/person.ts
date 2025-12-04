@@ -1,9 +1,17 @@
+import type { Movie } from "./movie";
+
+export interface MovieWithPersonInfo extends Movie {
+  role: string;
+  character_name: string | null;
+}
+
 export interface Person {
   id: number;
   name: string;
   birth_date: string | null;
   biography: string | null;
   image_url: string;
+  movies: MovieWithPersonInfo[];
 }
 
 export async function getPersonById(id: number | string): Promise<Person> {
