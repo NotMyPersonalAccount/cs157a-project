@@ -1,27 +1,31 @@
 import { createContext, useContext, useState, useEffect } from "react";
 
+type User = { id: number; username?: string };
+
 type AuthContextType = {
-  user: { id: number } | null;
+  user: User | null;
+  loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  loading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<{ id: number } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const checkAuth = async () => {
+  const fetchMe = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/favorites`, {
-        method: "GET",
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/me`, {
         credentials: "include",
       });
+
       if (res.ok) {
-        setUser({ id: 1 });
+        const data = await res.json();
+        setUser({ id: data.id, username: data.username });
       } else {
         setUser(null);
       }
@@ -32,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  async function login(username: string, password: string) {
+  const login = async (username: string, password: string) => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
       method: "POST",
       credentials: "include",
@@ -41,13 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!res.ok) {
-      const err = await res.json();
+      const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || "Login failed");
     }
-    setUser({ id: 1 });
-  }
 
-  async function register(username: string, password: string) {
+    await fetchMe();
+  };
+
+  const register = async (username: string, password: string) => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/register`, {
       method: "POST",
       credentials: "include",
@@ -56,33 +61,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!res.ok) {
-      const err = await res.json();
+      const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || "Registration failed");
     }
-    setUser({ id: 1 });
-  }
+  };
 
-  async function logout() {
+  const logout = async () => {
     await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
       method: "POST",
       credentials: "include",
     });
     setUser(null);
-  }
+  };
 
   useEffect(() => {
-    checkAuth();
+    fetchMe();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 };

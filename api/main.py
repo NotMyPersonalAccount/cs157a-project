@@ -8,19 +8,31 @@ import sys
 
 load_dotenv()
 
-try:
-    conn = mariadb.connect(
-        user=os.getenv("MARIADB_USER"),
-        password=os.getenv("MARIADB_PASSWORD"),
-        host=os.getenv("MARIADB_HOST"),
-        port=int(os.getenv("MARIADB_PORT")),
-        database=os.getenv("MARIADB_DATABASE")
-    )
-except mariadb.Error as e:
-    print(f"Error connecting to MariaDB: {e}")
-    sys.exit(1)
+def get_db_connection():
+    try:
+        return mariadb.connect(
+            user=os.getenv("MARIADB_USER"),
+            password=os.getenv("MARIADB_PASSWORD"),
+            host=os.getenv("MARIADB_HOST"),
+            port=int(os.getenv("MARIADB_PORT")),
+            database=os.getenv("MARIADB_DATABASE")
+        )
+    except mariadb.Error as e:
+        print(f"Error connecting to MariaDB: {e}")
+        raise HTTPException(500, "Database connection failed")
 
-cursor = conn.cursor()
+def get_cursor():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        yield cursor
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cursor.close()
+        conn.close()
 
 app = FastAPI()
 
@@ -28,7 +40,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[os.getenv("CORS_ORIGIN", "http://localhost:5173")],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "DELETE", "PUT"],
     allow_headers=["*"],
 )
 
@@ -41,16 +53,15 @@ def get_current_user(request: Request):
     return user_id
 
 @app.post("/register")
-def register(username: str = Form(...), password: str = Form(...)):
+def register(username: str = Form(...), password: str = Form(...), cursor = Depends(get_cursor)):
     try:
         cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
-        conn.commit()
         return {"message": "User created"}
     except mariadb.IntegrityError:
         raise HTTPException(400, "Username already exists")
 
 @app.post("/login")
-def login(request: Request, username: str = Form(...), password: str = Form(...)):
+def login(request: Request, username: str = Form(...), password: str = Form(...), cursor = Depends(get_cursor)):
     cursor.execute("SELECT id FROM users WHERE username = ? AND password = ?", (username, password))
     user = cursor.fetchone()
     if not user:
@@ -64,22 +75,20 @@ def logout(request: Request):
     return {"message": "Logged out"}
 
 @app.post("/favorites/{movie_id}")
-def add_favorite(movie_id: int, user_id: int = Depends(get_current_user)):
+def add_favorite(movie_id: int, user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
     try:
         cursor.execute("INSERT INTO favorites (user_id, movie_id) VALUES (?, ?)", (user_id, movie_id))
-        conn.commit()
         return {"message": "Added"}
     except mariadb.IntegrityError:
         raise HTTPException(400, "Already in favorites")
 
 @app.delete("/favorites/{movie_id}")
-def remove_favorite(movie_id: int, user_id: int = Depends(get_current_user)):
+def remove_favorite(movie_id: int, user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
     cursor.execute("DELETE FROM favorites WHERE user_id = ? AND movie_id = ?", (user_id, movie_id))
-    conn.commit()
     return {"message": "Removed"}
 
 @app.get("/favorites")
-def get_favorites(user_id: int = Depends(get_current_user)):
+def get_favorites(user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
     cursor.execute("""
         SELECT m.id, m.title, m.plot, m.release_date, m.runtime, m.rating, m.genre, m.image_url
         FROM favorites f
@@ -91,14 +100,14 @@ def get_favorites(user_id: int = Depends(get_current_user)):
             for r in cursor.fetchall()]
 
 @app.get("/movies")
-def get_movies():
+def get_movies(cursor = Depends(get_cursor)):
     cursor.execute("SELECT id, title, plot, release_date, runtime, rating, genre, image_url FROM movies")
     return [{"id": r[0], "title": r[1], "plot": r[2], "release_date": r[3],
              "runtime": r[4], "rating": r[5], "genre": r[6], "image_url": r[7]}
             for r in cursor.fetchall()]
 
 @app.get("/movies/{movie_id}")
-def get_movie(movie_id: int):
+def get_movie(movie_id: int, cursor = Depends(get_cursor)):
     cursor.execute("SELECT id, title, plot, release_date, runtime, rating, genre, image_url FROM movies WHERE id = ?", (movie_id,))
     row = cursor.fetchone()
     if not row:
@@ -117,7 +126,7 @@ def get_movie(movie_id: int):
     return movie
 
 @app.get("/people/{person_id}")
-def get_person(person_id: int):
+def get_person(person_id: int, cursor = Depends(get_cursor)):
     cursor.execute("SELECT id, name, birth_date, biography, image_url FROM people WHERE id = ?", (person_id,))
     row = cursor.fetchone()
     if not row:
@@ -125,3 +134,42 @@ def get_person(person_id: int):
     return {"id": row[0], "name": row[1],
             "birth_date": row[2].isoformat() if row[2] else None,
             "biography": row[3], "image_url": row[4]}
+
+@app.post("/movies/{movie_id}/comments")
+def add_comment(movie_id: int, content: str = Form(...), user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
+    cursor.execute(
+        "INSERT INTO comments (movie_id, user_id, content) VALUES (?, ?, ?)",
+        (movie_id, user_id, content)
+    )
+    return {"message": "Comment added"}
+
+@app.get("/movies/{movie_id}/comments")
+def get_comments(movie_id: int, cursor = Depends(get_cursor)):
+    cursor.execute("""
+        SELECT c.id, c.content, c.created_at, u.username, u.id as user_id
+        FROM comments c
+        JOIN users u ON c.user_id = u.id
+        WHERE c.movie_id = ?
+        ORDER BY c.created_at DESC
+    """, (movie_id,))
+    
+    return [{"id": r[0], "content": r[1], "created_at": r[2].isoformat() if r[2] else None, "username": r[3], "user_id": r[4]}
+            for r in cursor.fetchall()]
+
+@app.delete("/movies/{movie_id}/comments/{comment_id}")
+def delete_comment(movie_id: int, comment_id: int, user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
+    cursor.execute(
+        "DELETE FROM comments WHERE movie_id = ? AND id = ? AND user_id = ?",
+        (movie_id, comment_id, user_id)
+    )
+    if cursor.rowcount == 0:
+        raise HTTPException(404, "Comment not found or not yours")
+    return {"message": "Comment deleted"}
+
+@app.get("/me")
+def get_me(user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
+    cursor.execute("SELECT id, username FROM users WHERE id = ?", (user_id,))
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(404, "User not found")
+    return {"id": row[0], "username": row[1]}

@@ -6,6 +6,7 @@ import Description from "@/components/MovieDetails/Description";
 import MovieHeader from "@/components/MovieDetails/MovieHeader";
 import MovieInfo from "@/components/MovieDetails/MovieInfo";
 import FavoriteButton from "@/components/MovieDetails/FavoriteButton";
+import CommentsSection from "@/components/MovieDetails/CommentSection";
 
 export const Route = createFileRoute("/movies/$movieId")({
   component: MovieDetailsComponent,
@@ -21,24 +22,28 @@ function MovieDetailsComponent() {
     gcTime: 1000 * 60 * 60 * 24,
   });
 
-  if (isLoading) return <div className="container mx-auto p-6">Loading...</div>;
-  if (!movie) return <div className="container mx-auto p-6">Movie not found</div>;
+  if (isLoading) return <div className="container mx-auto p-6 text-white">Loading...</div>;
+  if (!movie) return <div className="container mx-auto p-6 text-white">Movie not found</div>;
 
   return (
-    <div className="container mx-auto px-6 pt-6 pb-0 max-w-6xl">
+    <div className="container mx-auto px-6 pt-6 pb-20 max-w-6xl">
       <Link to="/" className="text-blue-500 hover:underline mb-6 inline-block">
         ← Back to movies
       </Link>
       
       <div className="grid md:grid-cols-2 gap-8">
-        <div>
+        <div className="space-y-12">
           <img 
             src={movie.image_url} 
             alt={movie.title}
             className="w-full rounded-xl shadow-lg"
           />
+          
+          <div className="mt-12">
+            <CommentsSection movieId={movie.id} />
+          </div>
         </div>
-        
+
         <div>
           <MovieHeader 
             title={movie.title}
@@ -51,12 +56,11 @@ function MovieDetailsComponent() {
             <FavoriteButton movieId={movie.id} />
           </div>
           
-          <div className="flex">
+          <div className="flex gap-8 mb-8">
             <MovieInfo 
               rating={movie.rating}
               runtime={movie.runtime}
             />
-            
             <Description content={movie.plot} />
           </div>
 
