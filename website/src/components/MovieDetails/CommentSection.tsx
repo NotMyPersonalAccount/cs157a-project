@@ -2,7 +2,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useLocation } from "@tanstack/react-router";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 interface Comment {
   id: number;
@@ -40,6 +40,29 @@ async function postComment(movieId: number, content: string) {
       .json()
       .catch(() => ({ detail: "Failed to post comment" }));
     throw new Error(error.detail || "Failed to post comment");
+  }
+  return res.json();
+}
+
+async function updateComment(
+  movieId: number,
+  commentId: number,
+  content: string
+) {
+  const res = await fetch(
+    `${import.meta.env.VITE_API_URL}/movies/${movieId}/comments/${commentId}`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ content }),
+    }
+  );
+  if (!res.ok) {
+    const error = await res
+      .json()
+      .catch(() => ({ detail: "Failed to update comment" }));
+    throw new Error(error.detail || "Failed to updated comment");
   }
   return res.json();
 }
@@ -148,11 +171,24 @@ export default function CommentsSection({ movieId }: { movieId: number }) {
 }
 
 function Comment({ movieId, comment }: { movieId: number; comment: Comment }) {
+  const [editMode, setEditMode] = useState(false);
+  const [editedContent, setEditedContent] = useState(comment.content);
+
   const { user } = useAuth();
 
   const queryClient = useQueryClient();
+  const updateMutation = useMutation({
+    mutationFn: () => updateComment(movieId, comment.id, editedContent),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", movieId] });
+      setEditMode(false);
+    },
+    onError: () => {
+      alert("Failed to update comment");
+    },
+  });
   const deleteMutation = useMutation({
-    mutationFn: (commentId: number) => deleteComment(movieId, commentId),
+    mutationFn: () => deleteComment(movieId, comment.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["comments", movieId] });
     },
@@ -175,17 +211,59 @@ function Comment({ movieId, comment }: { movieId: number; comment: Comment }) {
         </div>
 
         {user && comment.user_id === user.id && (
-          <button
-            onClick={() => deleteMutation.mutate(comment.id)}
-            disabled={deleteMutation.isPending}
-            className="text-red-400 cursor-pointer hover:text-red-300 transition hover:scale-110"
-            title="Delete comment"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEditMode(true)}
+              className="text-red-400 cursor-pointer hover:text-red-300 transition hover:scale-110"
+              title="Edit comment"
+            >
+              <Pencil className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              className="text-red-400 cursor-pointer hover:text-red-300 transition hover:scale-110"
+              title="Delete comment"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
         )}
       </div>
-      <p className="text-gray-300">{comment.content}</p>
+      {!editMode ? (
+        <p className="text-gray-300">{comment.content}</p>
+      ) : (
+        <div className="mb-8">
+          <textarea
+            value={editedContent}
+            onChange={(e) => setEditedContent(e.target.value)}
+            placeholder="Edit comment..."
+            className="w-full p-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:border-white/50"
+            rows={3}
+            required
+          />
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => setEditMode(false)}
+              disabled={updateMutation.isPending}
+              className="mt-3 px-6 py-3 bg-black border border-white text-white font-bold rounded-lg cursor-pointer hover:bg-white hover:text-black transition-colors duration-300 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                updateMutation.mutate();
+              }}
+              disabled={
+                updateMutation.isPending || comment.content === editedContent
+              }
+              className="mt-3 px-6 py-3 bg-black border border-white text-white font-bold rounded-lg cursor-pointer hover:bg-white hover:text-black transition-colors duration-300 disabled:opacity-50"
+            >
+              Update
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

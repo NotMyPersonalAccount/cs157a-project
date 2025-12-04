@@ -156,6 +156,16 @@ def get_comments(movie_id: int, cursor = Depends(get_cursor)):
     return [{"id": r[0], "content": r[1], "created_at": r[2].isoformat() if r[2] else None, "username": r[3], "user_id": r[4]}
             for r in cursor.fetchall()]
 
+@app.post("/movies/{movie_id}/comments/{comment_id}")
+def update_comment(movie_id: int, comment_id: int, content: str = Form(...), user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
+    cursor.execute(
+        "UPDATE comments SET content = ? WHERE id = ? AND movie_id = ? AND user_id = ?",
+        (content, comment_id, movie_id, user_id)
+    )
+    if cursor.rowcount == 0:
+        raise HTTPException(404, "Comment not found or not yours")
+    return {"message": "Comment updated"}
+
 @app.delete("/movies/{movie_id}/comments/{comment_id}")
 def delete_comment(movie_id: int, comment_id: int, user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
     cursor.execute(
