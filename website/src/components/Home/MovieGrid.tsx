@@ -18,7 +18,12 @@ export default function MovieGrid({ movies }: MovieGridProps) {
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
         {movies
-          .filter((m) => !filter.trim() || m.title.toLowerCase().includes(filter.toLowerCase()))
+          .filter(
+            (m) =>
+              !filter.trim() ||
+              m.title.toLowerCase().includes(filter.toLowerCase()) ||
+              m.genre.toLowerCase().includes(filter.toLowerCase())
+          )
           .map((movie) => (
             <MovieCard key={movie.id} movie={movie} />
           ))}
