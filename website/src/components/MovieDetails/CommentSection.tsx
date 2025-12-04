@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useLocation } from "@tanstack/react-router";
 import { Pencil, Trash2 } from "lucide-react";
+import dayjs from "dayjs";
 
 interface Comment {
   id: number;
@@ -171,6 +172,19 @@ export default function CommentsSection({ movieId }: { movieId: number }) {
   );
 }
 
+function CommentTimestamp({ timestamp }: { timestamp: string }) {
+  return (
+    <span title={dayjs(timestamp).format("dddd, MMMM D, YYYY hh:mm A")}>
+      {dayjs(timestamp).calendar(null, {
+        sameDay: "h:mm A",
+        lastDay: "[Yesterday at] h:mm A",
+        lastWeek: "MM/DD/YY, h:mm A",
+        sameElse: "MM/DD/YY, h:mm A",
+      })}
+    </span>
+  );
+}
+
 function Comment({ movieId, comment }: { movieId: number; comment: Comment }) {
   const [editMode, setEditMode] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
@@ -207,7 +221,13 @@ function Comment({ movieId, comment }: { movieId: number; comment: Comment }) {
         <div>
           <p className="font-bold text-white">{comment.username}</p>
           <p className="text-sm text-gray-500">
-            {new Date(comment.created_at).toLocaleDateString()}
+            <CommentTimestamp timestamp={comment.created_at} />
+            {comment.edited_at && (
+              <>
+                {" "}
+                (Edited <CommentTimestamp timestamp={comment.edited_at} />)
+              </>
+            )}
           </p>
         </div>
 
