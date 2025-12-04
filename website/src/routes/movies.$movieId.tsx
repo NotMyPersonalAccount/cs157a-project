@@ -49,6 +49,7 @@ function MovieDetailsComponent() {
             title={movie.title}
             release_date={movie.release_date}
             director={movie.director}
+            director_id={movie.director_id}
             genre={movie.genre}
           />
           

@@ -28,6 +28,7 @@ export interface MoviePerson {
 export interface MovieWithCast extends Movie {
   cast: MoviePerson[];
   director: string | null;
+  director_id: number | null;
 }
 
 export async function getMovies() {

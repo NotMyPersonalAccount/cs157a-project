@@ -121,6 +121,7 @@ def get_movie(movie_id: int, cursor = Depends(get_cursor)):
     for r in cursor.fetchall():
         person = {"person_id": r[0], "name": r[1], "image_url": r[2], "role": r[3], "character_name": r[4]}
         if r[3] == "director":
+            movie["director_id"] = r[0]
             movie["director"] = r[1]
         movie["cast"].append(person)
     return movie
