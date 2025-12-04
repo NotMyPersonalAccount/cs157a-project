@@ -8,6 +8,7 @@ interface Comment {
   id: number;
   content: string;
   created_at: string;
+  edited_at: string;
   username: string;
   user_id: number;
 }

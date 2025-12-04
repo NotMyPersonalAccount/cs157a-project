@@ -146,20 +146,20 @@ def add_comment(movie_id: int, content: str = Form(...), user_id: int = Depends(
 @app.get("/movies/{movie_id}/comments")
 def get_comments(movie_id: int, cursor = Depends(get_cursor)):
     cursor.execute("""
-        SELECT c.id, c.content, c.created_at, u.username, u.id as user_id
+        SELECT c.id, c.content, c.created_at, c.edited_at, u.username, u.id as user_id
         FROM comments c
         JOIN users u ON c.user_id = u.id
         WHERE c.movie_id = ?
         ORDER BY c.created_at DESC
     """, (movie_id,))
     
-    return [{"id": r[0], "content": r[1], "created_at": r[2].isoformat() if r[2] else None, "username": r[3], "user_id": r[4]}
+    return [{"id": r[0], "content": r[1], "created_at": r[2].isoformat() if r[2] else None, "edited_at": r[3].isoformat() if r[3] else None, "username": r[4], "user_id": r[5]}
             for r in cursor.fetchall()]
 
 @app.post("/movies/{movie_id}/comments/{comment_id}")
 def update_comment(movie_id: int, comment_id: int, content: str = Form(...), user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
     cursor.execute(
-        "UPDATE comments SET content = ? WHERE id = ? AND movie_id = ? AND user_id = ?",
+        "UPDATE comments SET content = ?, edited_at = NOW() WHERE id = ? AND movie_id = ? AND user_id = ?",
         (content, comment_id, movie_id, user_id)
     )
     if cursor.rowcount == 0:
