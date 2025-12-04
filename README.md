@@ -1,4 +1,5 @@
 # CS157A Project
+This project implements a basic full-stack application for exploring and discussing movies. It is split into three different components: the database, the REST API, and the website.
 
 ## Dependencies
 - MariaDB (database)

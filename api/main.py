@@ -55,6 +55,7 @@ def get_current_user(request: Request):
 @app.post("/register")
 def register(username: str = Form(...), password: str = Form(...), cursor = Depends(get_cursor)):
     try:
+        # Try to insert a new user into the database
         cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
         return {"message": "User created"}
     except mariadb.IntegrityError:
@@ -62,6 +63,7 @@ def register(username: str = Form(...), password: str = Form(...), cursor = Depe
 
 @app.post("/login")
 def login(request: Request, username: str = Form(...), password: str = Form(...), cursor = Depends(get_cursor)):
+    # Try to find a user based on the provided username
     cursor.execute("SELECT id FROM users WHERE username = ? AND password = ?", (username, password))
     user = cursor.fetchone()
     if not user:
@@ -77,6 +79,7 @@ def logout(request: Request):
 @app.post("/favorites/{movie_id}")
 def add_favorite(movie_id: int, user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
     try:
+        # Try to insert a new favorite movie entry for the user
         cursor.execute("INSERT INTO favorites (user_id, movie_id) VALUES (?, ?)", (user_id, movie_id))
         return {"message": "Added"}
     except mariadb.IntegrityError:
@@ -84,11 +87,13 @@ def add_favorite(movie_id: int, user_id: int = Depends(get_current_user), cursor
 
 @app.delete("/favorites/{movie_id}")
 def remove_favorite(movie_id: int, user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
+    # Delete a favorite movie entry for the user based on the specified movie ID
     cursor.execute("DELETE FROM favorites WHERE user_id = ? AND movie_id = ?", (user_id, movie_id))
     return {"message": "Removed"}
 
 @app.get("/favorites")
 def get_favorites(user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
+    # Use an inner join to select movie details for movies which are favorited by the user.
     cursor.execute("""
         SELECT m.id, m.title, m.plot, m.release_date, m.runtime, m.rating, m.genre, m.image_url
         FROM favorites f
@@ -101,6 +106,7 @@ def get_favorites(user_id: int = Depends(get_current_user), cursor = Depends(get
 
 @app.get("/movies")
 def get_movies(cursor = Depends(get_cursor)):
+    # Query movie details for all movies in the database
     cursor.execute("SELECT id, title, plot, release_date, runtime, rating, genre, image_url FROM movies")
     return [{"id": r[0], "title": r[1], "plot": r[2], "release_date": r[3],
              "runtime": r[4], "rating": r[5], "genre": r[6], "image_url": r[7]}
@@ -108,6 +114,7 @@ def get_movies(cursor = Depends(get_cursor)):
 
 @app.get("/movies/{movie_id}")
 def get_movie(movie_id: int, cursor = Depends(get_cursor)):
+    # Query movie details for the specified movie
     cursor.execute("SELECT id, title, plot, release_date, runtime, rating, genre, image_url FROM movies WHERE id = ?", (movie_id,))
     row = cursor.fetchone()
     if not row:
@@ -115,9 +122,11 @@ def get_movie(movie_id: int, cursor = Depends(get_cursor)):
     movie = {"id": row[0], "title": row[1], "plot": row[2], "release_date": row[3],
              "runtime": row[4], "rating": row[5], "genre": row[6], "image_url": row[7],
              "director": None, "cast": []}
+    # Use an inner join to select person details for every person involved with the specified movie
     cursor.execute("""SELECT p.id, p.name, p.image_url, mp.role, mp.character_name
                       FROM movie_people mp JOIN people p ON mp.person_id = p.id
                       WHERE mp.movie_id = ?""", (movie_id,))
+    # Add every person involved to the movie dictionary
     for r in cursor.fetchall():
         person = {"person_id": r[0], "name": r[1], "image_url": r[2], "role": r[3], "character_name": r[4]}
         if r[3] == "director":
@@ -128,6 +137,7 @@ def get_movie(movie_id: int, cursor = Depends(get_cursor)):
 
 @app.get("/people/{person_id}")
 def get_person(person_id: int, cursor = Depends(get_cursor)):
+    # Query person details for the specified person
     cursor.execute("SELECT id, name, birth_date, biography, image_url FROM people WHERE id = ?", (person_id,))
     row = cursor.fetchone()
     if not row:
@@ -135,7 +145,9 @@ def get_person(person_id: int, cursor = Depends(get_cursor)):
     person = {"id": row[0], "name": row[1],
             "birth_date": row[2].isoformat() if row[2] else None,
             "biography": row[3], "image_url": row[4], "movies": []}
+    # Use an inner join to select movie details for every movie the specified person is involved with
     cursor.execute("SELECT movie_id, title, plot, release_date, runtime, rating, genre, image_url, role, character_name FROM movies INNER JOIN movie_people ON movies.id = movie_people.movie_id WHERE person_id = ?", (person_id,))
+    # Add every movie the person is involved with into the person dictionary
     for r in cursor.fetchall():
         movie = {"id": r[0], "title": r[1], "plot": r[2], "release_date": r[3],
              "runtime": r[4], "rating": r[5], "genre": r[6], "image_url": r[7], "role": r[8], "character_name": r[9]}
@@ -144,6 +156,7 @@ def get_person(person_id: int, cursor = Depends(get_cursor)):
 
 @app.post("/movies/{movie_id}/comments")
 def add_comment(movie_id: int, content: str = Form(...), user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
+    # Insert a new comment created by the user for a movie
     cursor.execute(
         "INSERT INTO comments (movie_id, user_id, content) VALUES (?, ?, ?)",
         (movie_id, user_id, content)
@@ -152,6 +165,7 @@ def add_comment(movie_id: int, content: str = Form(...), user_id: int = Depends(
 
 @app.get("/movies/{movie_id}/comments")
 def get_comments(movie_id: int, cursor = Depends(get_cursor)):
+    # Use an inner join to select comment and author details for all comments on the specified movie
     cursor.execute("""
         SELECT c.id, c.content, c.created_at, c.edited_at, u.username, u.id as user_id
         FROM comments c
@@ -165,6 +179,7 @@ def get_comments(movie_id: int, cursor = Depends(get_cursor)):
 
 @app.post("/movies/{movie_id}/comments/{comment_id}")
 def update_comment(movie_id: int, comment_id: int, content: str = Form(...), user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
+    # Update the content and edited_at for the specified comment if the comment's user matches the user
     cursor.execute(
         "UPDATE comments SET content = ?, edited_at = NOW() WHERE id = ? AND movie_id = ? AND user_id = ?",
         (content, comment_id, movie_id, user_id)
@@ -175,6 +190,7 @@ def update_comment(movie_id: int, comment_id: int, content: str = Form(...), use
 
 @app.delete("/movies/{movie_id}/comments/{comment_id}")
 def delete_comment(movie_id: int, comment_id: int, user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
+    # Delete the specified comment if the comment's user matches the user
     cursor.execute(
         "DELETE FROM comments WHERE movie_id = ? AND id = ? AND user_id = ?",
         (movie_id, comment_id, user_id)
@@ -185,6 +201,7 @@ def delete_comment(movie_id: int, comment_id: int, user_id: int = Depends(get_cu
 
 @app.get("/me")
 def get_me(user_id: int = Depends(get_current_user), cursor = Depends(get_cursor)):
+    # Query the username and ID of the user
     cursor.execute("SELECT id, username FROM users WHERE id = ?", (user_id,))
     row = cursor.fetchone()
     if not row:
